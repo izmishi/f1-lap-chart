@@ -75,24 +75,53 @@ for i in range(len(lap_analysis_file)):
 			lap_times = []
 all_lap_times.append(lap_times)
 
+# Get list of driver numbers
+def list_of_driver_numbers():
+	driver_numbers = []
+	print(list(race_history_file)[2:])
+	# for row in list(race_history_file)[2:(len(all_drivers) + 2)]:
+		# driver_number = row[0]
+
+# list_of_driver_numbers()
+
+from reigningchampion import reigning_champion_number
+
 # List of constructors
 constructors = requests.get("http://ergast.com/api/f1/{}/{:02d}/constructors.json".format(args.year, args.round)).json()['MRData']['ConstructorTable']['Constructors']
 constructor_ids = list(map(lambda x: x['constructorId'], constructors))
 constructor_for_driver = {}
 driver_numbers_sorted_by_constructor = []
 
+
+
+driver_numbers = []
+
+# Associate each driver with a constructor
 for constructor in constructor_ids:
 	drivers = constructors = requests.get("http://ergast.com/api/f1/{}/{:02d}/constructors/{}/drivers.json".format(args.year, args.round, constructor)).json()['MRData']['DriverTable']['Drivers']
-	driver_numbers = list(map(lambda x: x['permanentNumber'], drivers))
-	for n in map(lambda x: str(x), sorted(map(lambda x: int(x), driver_numbers))):
+	# all_drivers.extend(drivers)
+	constructor_driver_numbers = list(map(lambda x: x['permanentNumber'], drivers))
+	
+	
+	# Ergast data only knows a driver's permanent number and will not indicate when the champion opts to race with the number '1'
+	# Check to see if the reigning WDC races with the number '1'
+	for i in range(len(constructor_driver_numbers)):
+		number = constructor_driver_numbers[i]
+		if reigning_champion_number[args.year].get(number) != None:
+			constructor_driver_numbers[i] = reigning_champion_number[args.year].get(number)
+
+	driver_numbers.extend(constructor_driver_numbers)
+	# for n in map(lambda x: str(x), sorted(map(lambda x: int(x), driver_numbers))):
+	for n in map(str, sorted(map(int, constructor_driver_numbers))):
 		constructor_for_driver[n] = constructor
 		driver_numbers_sorted_by_constructor.append(n)
 
 # List of driver numbers
-all_drivers = requests.get("http://ergast.com/api/f1/{}/{:02d}/drivers.json".format(args.year, args.round)).json()['MRData']['DriverTable']['Drivers']
-driver_numbers = list(map(lambda x: int(x['permanentNumber']), all_drivers))
+driver_numbers = list(map(int, driver_numbers))
 driver_numbers_sorted = sorted(driver_numbers)
 driver_laps = {}
+
+
 
 # Associate lap times from Lap Analysis to the correct drivers
 for i in range(len(driver_numbers)):
@@ -102,12 +131,13 @@ for i in range(len(driver_numbers)):
 
 # Use Race History Chart to get the lap times for lap 1
 drivers_completed_lap_1 = []
-for row in list(race_history_file)[2:(len(all_drivers) + 2)]:
+for row in list(race_history_file)[2:(len(driver_numbers) + 2)]:
 	driver_number = row[0]
 	if driver_number in drivers_completed_lap_1:
 		break
 	drivers_completed_lap_1.append(driver_number)
 	lap_time = row[2]
+	# print(driver_laps)
 	if len(driver_laps[driver_number]) > 0:
 		driver_laps[driver_number][0] = lap_time
 
@@ -154,7 +184,7 @@ def median(lst):
 
 filtered_lap_times = list(filter(lambda x: len(x) > 0, driver_laps.values()))
 median_lap_time = median(list(map(lambda x: median(x), filtered_lap_times)))
-print("Representative lap time: ", median_lap_time)
+print("Baseline lap time: ", median_lap_time)
 
 # Cumulative lap time
 import copy

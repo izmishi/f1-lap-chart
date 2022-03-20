@@ -43,5 +43,27 @@ colour_for_constructor = {
 		'mercedes': '#00D2BE',
 		'red_bull': '#0600EF',
 		'williams': '#005AFF'
+	}, 2022: {
+		'alfa': '#900000',
+		'alphatauri': '#2B4562',
+		'alpine': '#0090FF',
+		'aston_martin': '#006F62',
+		'ferrari': '#DC0000',
+		'haas': '#FFFFFF',
+		'mclaren': '#FF8700',
+		'mercedes': '#00D2BE',
+		'red_bull': '#0600EF',
+		'williams': '#005AFF'
+		# Some of the official colours for 2022 are a bit pale, which makes it harder to disinguish them. So reusing the 2021 colours
+		# 'alfa': '#B12039',
+		# 'alphatauri': '#4E7C9B',
+		# 'alpine': '#2293D1',
+		# 'aston_martin': '#2D826D',
+		# 'ferrari': '#ED1C24',
+		# 'haas': '#B6BABD',
+		# 'mclaren': '#F58020',
+		# 'mercedes': '#6CD3BF',
+		# 'red_bull': '#1E5BC6',
+		# 'williams': '#37BEDD'
 	}
 }
