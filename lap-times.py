@@ -52,37 +52,37 @@ convert_into(lap_analysis_file_url, lap_analysis_file_name, lattice=True, pages 
 convert_into(race_history_file_url, race_history_file_name, lattice=True, pages = "all")
 
 lap_analysis_file = csv.reader(open(lap_analysis_file_name))
-race_history_file = csv.reader(open(race_history_file_name))
+race_history_file = list(csv.reader(open(race_history_file_name)))
 
 # Lap Analysis
 all_lap_times = []
 lap_times = []
-empty_table = 0
 lap_analysis_file = list(lap_analysis_file)[2:]
+lap_counter = '0'
 for i in range(len(lap_analysis_file)):
 	row = lap_analysis_file[i]
 	if len(row) == 3:
 		if row[0] == '1'and i != 0:
 			all_lap_times.append(lap_times)
 			lap_times = []
-		if row[2] != '':
+			lap_counter = '0'
+		if row[2] != '' and row[0] != lap_counter:
 			lap_times.append(row[2])
-	elif row == ['', '']:
-		# In case a driver has a DNS or crashes on lap 1
-		empty_table += 1
-		if empty_table % 2 == 0:
-			all_lap_times.append(lap_times)
-			lap_times = []
+			# We keep track of which laps we've got, since the FIA document may write down the same lap twice (see 2022 Saudi Arabian GP)
+			lap_counter = row[0]
 all_lap_times.append(lap_times)
 
-# Get list of driver numbers
-def list_of_driver_numbers():
-	driver_numbers = []
-	print(list(race_history_file)[2:])
+def getNumber(string):
+	if string.isdigit():
+		return int(string)
+	else:
+		return -1
+
+# Get list of drivers who completed at least one lap
+def set_of_driver_numbers_with_laps():
+	return set(filter(lambda x: x > -1, map(lambda x: getNumber(x[0]),race_history_file[2:])))
 	# for row in list(race_history_file)[2:(len(all_drivers) + 2)]:
 		# driver_number = row[0]
-
-# list_of_driver_numbers()
 
 from reigningchampion import reigning_champion_number
 
@@ -120,24 +120,32 @@ for constructor in constructor_ids:
 driver_numbers = list(map(int, driver_numbers))
 driver_numbers_sorted = sorted(driver_numbers)
 driver_laps = {}
+driver_numbers_with_no_laps = set(driver_numbers) - set_of_driver_numbers_with_laps()
 
+print(driver_numbers)
+print(driver_numbers_with_no_laps)
+print(set_of_driver_numbers_with_laps())
 
 
 # Associate lap times from Lap Analysis to the correct drivers
+times_skipped = 0
 for i in range(len(driver_numbers)):
 	driver = str(driver_numbers_sorted[i])
-	driver_laps[driver] = all_lap_times[i]
+	if driver_numbers_sorted[i] in driver_numbers_with_no_laps:
+		times_skipped += 1
+		driver_laps[driver] = []
+		continue
+	driver_laps[driver] = all_lap_times[i - times_skipped]
 
 
 # Use Race History Chart to get the lap times for lap 1
 drivers_completed_lap_1 = []
-for row in list(race_history_file)[2:(len(driver_numbers) + 2)]:
+for row in race_history_file[2:(len(driver_numbers) + 2)]:
 	driver_number = row[0]
 	if driver_number in drivers_completed_lap_1:
 		break
 	drivers_completed_lap_1.append(driver_number)
 	lap_time = row[2]
-	# print(driver_laps)
 	if len(driver_laps[driver_number]) > 0:
 		driver_laps[driver_number][0] = lap_time
 
@@ -199,14 +207,14 @@ for driver in driver_cumulative_lap_times.keys():
 	driver_cumulative_lap_times[driver] = laps
 
 
-# Delta to reference car
-delta_to_reference_car = copy.deepcopy(driver_cumulative_lap_times)
-for driver in delta_to_reference_car.keys():
-	cumulative_times = delta_to_reference_car[driver]
+# Delta to baseline car
+delta_to_baseline_car = copy.deepcopy(driver_cumulative_lap_times)
+for driver in delta_to_baseline_car.keys():
+	cumulative_times = delta_to_baseline_car[driver]
 	for i in range(len(cumulative_times)):
 		cumulative_times[i] -= (i + 1) * median_lap_time
 	cumulative_times = list(map(lambda x: round(x, 3), cumulative_times))
-	delta_to_reference_car[driver] = cumulative_times
+	delta_to_baseline_car[driver] = cumulative_times
 
 import matplotlib.pyplot as plt
 from constructorcolours import colour_for_constructor
@@ -221,7 +229,7 @@ plt.style.use('dark_background')
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 
-all_deltas = [item for sublist in delta_to_reference_car.values() for item in sublist]
+all_deltas = [item for sublist in delta_to_baseline_car.values() for item in sublist]
 ymin = floor(min(all_deltas) / 10) * 10
 ymax = ceil(max(all_deltas) / 10) * 10
 yticks = np.arange(ymin, ymax, 10)
@@ -234,11 +242,12 @@ ax.set_yticks(ymajorticks)
 
 for i in range(len(driver_numbers_sorted_by_constructor)):
 	driver = driver_numbers_sorted_by_constructor[i]
-	deltas = delta_to_reference_car[driver]
+	deltas = delta_to_baseline_car[driver]
 	linestyle = '-' if i % 2 == 0 else '--'
 	plt.plot(list(range(1, len(deltas) + 1)), deltas, label=driver, color=colour_for_constructor[args.year][constructor_for_driver[driver]], linestyle = linestyle)
 
-plt.title("{} Round {} - {}".format(args.year, args.round, ioc_code.upper()))
+plt.suptitle("{} Round {} - {}".format(args.year, args.round, ioc_code.upper()))
+plt.title("Baseline lap time: {} s".format(median_lap_time), fontsize='small')
 plt.legend(title='Drivers', bbox_to_anchor=(1, 1), loc='upper left', prop=fontP)
 
 plt.grid(True, 'both', 'both', color="grey", alpha=0.3)
