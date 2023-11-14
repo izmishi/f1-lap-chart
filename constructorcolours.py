@@ -65,5 +65,16 @@ colour_for_constructor = {
 		# 'mercedes': '#6CD3BF',
 		# 'red_bull': '#1E5BC6',
 		# 'williams': '#37BEDD'
-	}
+	}, 2023: {
+		'alfa': '#C92D4B',
+		'alphatauri': '#5E8FAA',
+		'alpine': '#2293D1',
+		'aston_martin': '#358C75',
+		'ferrari': '#F91536',
+		'haas': '#B6BABD',
+		'mclaren': '#F58020',
+		'mercedes': '#6CD3BF',
+		'red_bull': '#3671C6',
+		'williams': '#37BEDD'
+	}, 
 }

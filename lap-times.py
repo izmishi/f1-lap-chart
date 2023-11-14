@@ -41,7 +41,14 @@ else:
 
 # -----------------------------------------------------------------------------
 # Fetch the PDF
-race_history_file_url = 'https://www.fia.com/sites/default/files/{}_{:02d}_{}_f1_r0_timing_racehistorychart_v01.pdf'.format(args.year, args.round, ioc_code)
+
+fiaRound = args.round
+
+# The 2023 Emilia Romagna GP was cancelled, but the FIA documents names documents using the rounds from the orignal calendar 
+if args.year == 2023 and args.round > 5:
+	fiaRound += 1
+race_history_file_url = 'https://www.fia.com/sites/default/files/{}_{:02d}_{}_f1_r0_timing_racehistorychart_v01.pdf'.format(args.year, fiaRound, ioc_code)
+
 
 # Convert to CSV
 race_history_file_name = 'linear-race-history.csv'
@@ -85,6 +92,7 @@ driver_numbers = list(map(int, driver_numbers))
 driver_numbers_sorted = sorted(driver_numbers)
 driver_laps = {}
 
+# print(driver_numbers)
 
 for driver in driver_numbers:
 	driver_laps[str(driver)] = []
@@ -204,7 +212,12 @@ baseline_lap_times = [baseline_lap_time for _ in range(total_laps)]
 
 # Identify disrupted laps
 for lap in range(total_laps):
-	median_lap_time = median([x[1] for x in leaders_lap_times[lap]])
+	lap_times_of_leaders = [x[1] for x in leaders_lap_times[lap]]
+	# print()
+	# print(lap + 1)
+	# print(lap_times_of_leaders)
+	# print(np.corrcoef(np.arange(0, len(lap_times_of_leaders)), lap_times_of_leaders)[0][1], np.sqrt(np.var(lap_times_of_leaders)))
+	median_lap_time = median(lap_times_of_leaders)
 	if median_lap_time > red_threshold:
 		red_laps.append(lap)
 	elif median_lap_time > yellow_threshold:
@@ -255,7 +268,6 @@ for driver in delta_to_baseline_car.keys():
 import matplotlib.pyplot as plt
 from constructorcolours import colour_for_constructor
 from math import ceil, floor
-import numpy as np
 from matplotlib.font_manager import FontProperties
 
 fontP = FontProperties()
