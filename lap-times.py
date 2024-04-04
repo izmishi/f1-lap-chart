@@ -314,6 +314,8 @@ for i in range(len(driver_numbers_sorted_by_constructor)):
 
 plt.suptitle(event_name)#"{} Round {} - {}".format(args.year, args.round, ioc_code.upper()))
 plt.title("Baseline lap time: {} s".format(baseline_lap_time), fontsize='small')
+plt.xlabel("Lap")
+plt.ylabel("Gap (s)")
 plt.legend(title='Drivers', bbox_to_anchor=(1, 1), loc='upper left', prop=fontP)
 
 plt.grid(True, 'both', 'both', color="grey", alpha=0.3)
